@@ -1,8 +1,10 @@
 package com.example.authapi.controllers;
 
 import com.example.authapi.domain.user.AuthenticationDTO;
+import com.example.authapi.domain.user.LoginResponseDTO;
 import com.example.authapi.domain.user.RegisterDTO;
 import com.example.authapi.domain.user.User;
+import com.example.authapi.infra.security.TokenService;
 import com.example.authapi.repositories.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +22,12 @@ public class AuthenticationController {
 
     private AuthenticationManager authenticationManager;
     private UserRepository repository;
+    private TokenService tokenService;
 
-    public AuthenticationController(AuthenticationManager authenticationManager, UserRepository repository) {
+    public AuthenticationController(AuthenticationManager authenticationManager, UserRepository repository, TokenService tokenService) {
         this.authenticationManager = authenticationManager;
         this.repository = repository;
+        this.tokenService = tokenService;
     }
 
     @PostMapping("/login")
@@ -31,7 +35,9 @@ public class AuthenticationController {
         var usernamePassword = new UsernamePasswordAuthenticationToken(dto.login(), dto.password());
         var auth = authenticationManager.authenticate(usernamePassword);
 
-        return ResponseEntity.ok().build();
+        var token = tokenService.generateToken((User) auth.getPrincipal());
+
+        return ResponseEntity.ok(new LoginResponseDTO(token));
     }
 
     @PostMapping("/register")
